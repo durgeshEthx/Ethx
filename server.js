@@ -6,8 +6,10 @@ var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
+var serveStatic = require('serve-static')
+global.appRoot = path.resolve(__dirname);
 
-mongoose.connect('mongodb://localhost/ManualAuth', { useMongoClient: true });
+mongoose.connect('mongodb://localhost/ManualAuth', { useNewUrlParser: true });
 
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
@@ -47,7 +49,9 @@ app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.send(err.message);
 });
-
+app.use(serveStatic(path.join(__dirname + "public" )));
+ //app.use( express.static(path.join((__dirname + "public" ))));
+//app.use( express.static(__dirname));
 
 // listen on port 3000
 app.listen(3000, function () {

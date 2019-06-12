@@ -1,6 +1,16 @@
 var express = require('express');
 var router = express.Router();
 var User = require('../models/user');
+var upload = require('./upload');
+const PDF2Pic = require("pdf2pic");
+var watermark = require('dynamic-watermark');
+var path = require('path');
+var PDFImage = require("pdf-image").PDFImage;
+var converter = require('office-converter')( );
+var md5 = require('md5');
+var sizeOf = require('image-size');
+const image2base64 = require('image-to-base64');
+const fs = require('fs');
 
 router.get('/', function (req, res, next) {
 	return res.render('index.ejs');
@@ -63,6 +73,7 @@ router.get('/login', function (req, res, next) {
 
 router.post('/login', function (req, res, next) {
 	//console.log(req.body);
+
 	User.findOne({email:req.body.email},function(err,data){
 		if(data){
 			
@@ -141,8 +152,147 @@ router.post('/forgetpass', function (req, res, next) {
 	
 });
 
-router.post('/signdocs',function(req,res){
-     res.render('sign_document.ejs');
+router.get('/sign_document',function(req,res,{}){
+	 
+	console.log('url : '+req.url);
+	//random strings
+	const crypto = require('crypto');
+
+	crypto.randomBytes(64, (err, buf) => {
+		if (err) throw err;
+		console.log(`${buf.length} bytes of random data: ${buf.toString('hex')}`);
+	});
+
+//list of dir
+const directoryPath = path.join(appRoot, 'images');
+//passsing directoryPath and callback function
+fs.readdir(directoryPath, function (err, files) {
+    //handling error
+    if (err) {
+        return console.log('Unable to scan directory: ' + err);
+    } 
+    //listing all files using forEach
+    files.forEach(function (file) {
+        // Do whatever you want to do with the file
+        console.log(file); 
+    });
 });
 
+
+
+
+
+var paths = path.join(appRoot,'images','2_1.png');
+var dimensions = sizeOf(paths);
+console.log(dimensions.width, dimensions.height);
+console.log(md5('smlabs' + Date.now() + 'ethx'));
+//create watermark in image
+//console.log(__dirname);
+var optionsTextWatermark = {
+	type: "text",
+	text: md5('smlabs' + Date.now() + 'ethx'), // This is optional if you have provided text Watermark
+	destination: "output.png",
+	source: paths,
+	position: {
+			logoX : dimensions.width - 220,
+			logoY : dimensions.height - 60,
+			logoHeight: 100,
+			logoWidth: 100
+	},
+	textOption: {
+			fontSize: 10, //In px default : 20
+			color: '#AAF122' // Text color in hex default: #000000
+	}
+};
+
+//optionsImageWatermark or optionsTextWatermark
+watermark.embed(optionsTextWatermark, function(status) {
+	//Do what you want to do here
+	console.log(status);
+});
+
+
+image2base64('output.png') // you can also to use url
+    .then(
+        (response) => {
+			global.imgbase64 = response;
+		//	app.locals.b64 = response;
+          //  console.log(response); //cGF0aC90by9maWxlLmpwZw==
+        }
+    )
+    .catch(
+        (error) => {
+            console.log(error); //Exepection error....
+        }
+    )
+
+
+	console.log(req.body.action_id);
+     res.render('sign_document.ejs',{imgbas64:imgbase64});
+});
+
+//any format -> pdf -> png
+router.post('/upload', function(req, res) {
+console.log('approot'+appRoot);
+
+	upload(req, res,(error) => {
+		if(error){
+		  console.log('ERROR '+error);
+		 // res.redirect('/profile');
+		//  res.render('sign_document.ejs');
+		}else{
+		  if(req.file == undefined){
+			  console.log(here);
+			//res.redirect('/profile');
+				//res.render('sign_document.ejs');
+  
+		  }else{
+			var filename = path.basename(path.join(appRoot,'public','files',req.file.originalname), path.extname(req.file.originalname));
+		//	console.log(filename);
+		//	   console.log(req.file.originalname);
+			   const pdf2pic = new PDF2Pic({
+				density: 100,           // output pixels per inch
+				savename:filename,   // output file name
+				savedir: "./images",    // output file location
+				format: "png",          // output file format
+				size: 600               // output size in pixels
+			});
+			 
+			
+			
+			pdf2pic.convertBulk(path.join(appRoot,'public','files',req.file.originalname),-1).then((resolve) => {
+				console.log("image converter successfully!");
+			   
+				return resolve;
+			  });
+
+	
+
+
+		
+
+			  /**
+			   * Create new record in mongoDB
+			   */
+			//   var fullPath = "files/"+req.file.filename;
+			  
+			//   var d = {
+			// 	path:     fullPath
+				
+			//   };
+			 
+			// var doc = new Document(d); 
+		  
+			// doc.save(function(error){
+			//   if(error){ 
+			// 	throw error;
+			//   } 
+			// 	res.render('sign_document.ejs');
+		  //  });
+		}
+	  }
+	});    
+  });
+  
+  
 module.exports = router;
