@@ -12,6 +12,7 @@ var sizeOf = require('image-size');
 const image2base64 = require('image-to-base64');
 const fs = require('fs');
 
+
 router.get('/', function (req, res, next) {
 	return res.render('index.ejs');
 });
@@ -93,7 +94,7 @@ router.post('/login', function (req, res, next) {
 });
 
 router.get('/profile', function (req, res, next) {
-	console.log("profile");
+	//console.log("profile");
 	User.findOne({unique_id:req.session.userId},function(err,data){
 		console.log("data");
 		console.log(data);
@@ -152,15 +153,15 @@ router.post('/forgetpass', function (req, res, next) {
 	
 });
 
-router.get('/sign_document',function(req,res,{}){
+router.get('/sign_document',function(req,res){
 	 
-	console.log('url : '+req.url);
+	console.log('url : '+req.body.name);
 	//random strings
 	const crypto = require('crypto');
 
 	crypto.randomBytes(64, (err, buf) => {
 		if (err) throw err;
-		console.log(`${buf.length} bytes of random data: ${buf.toString('hex')}`);
+		//console.log(`${buf.length} bytes of random data: ${buf.toString('hex')}`);
 	});
 
 //list of dir
@@ -174,24 +175,26 @@ fs.readdir(directoryPath, function (err, files) {
     //listing all files using forEach
     files.forEach(function (file) {
         // Do whatever you want to do with the file
-        console.log(file); 
+       // console.log(file); 
     });
 });
 
 
 
 
-
-var paths = path.join(appRoot,'images','2_1.png');
+const tmpimg = imgname +'_1.png';
+//console.log('tmpimg'+tmpimg);
+var paths = path.join(appRoot,'images',tmpimg);
+const despath = path.join(appRoot,'views','images',imgname);
 var dimensions = sizeOf(paths);
-console.log(dimensions.width, dimensions.height);
-console.log(md5('smlabs' + Date.now() + 'ethx'));
+//console.log(dimensions.width, dimensions.height);
+//console.log(md5('smlabs' + Date.now() + 'ethx'));
 //create watermark in image
 //console.log(__dirname);
 var optionsTextWatermark = {
 	type: "text",
 	text: md5('smlabs' + Date.now() + 'ethx'), // This is optional if you have provided text Watermark
-	destination: "output.png",
+	destination: despath + '.png',
 	source: paths,
 	position: {
 			logoX : dimensions.width - 220,
@@ -208,27 +211,29 @@ var optionsTextWatermark = {
 //optionsImageWatermark or optionsTextWatermark
 watermark.embed(optionsTextWatermark, function(status) {
 	//Do what you want to do here
-	console.log(status);
+	//console.log(status);
 });
 
 
-image2base64('output.png') // you can also to use url
-    .then(
-        (response) => {
-			global.imgbase64 = response;
-		//	app.locals.b64 = response;
-          //  console.log(response); //cGF0aC90by9maWxlLmpwZw==
-        }
-    )
-    .catch(
-        (error) => {
-            console.log(error); //Exepection error....
-        }
-    )
+// image2base64('output.png') // you can also to use url
+//     .then(
+//         (response) => {
+// 			//global.imgbase64 = response;
+// 		//	app.locals.b64 = response;
+//           //  console.log(response); //cGF0aC90by9maWxlLmpwZw==
+//         }
+//     )
+//     .catch(
+//         (error) => {
+//             console.log(error); //Exepection error....
+//         }
+//     )
+vccxcz
 
-
-	console.log(req.body.action_id);
-     res.render('sign_document.ejs',{imgbas64:imgbase64});
+	var imgpath = path.join('images',imgname);
+	imgpath = imgpath +'.png';
+	//console.log('imgpath '+imgpath);
+     res.render('sign_document.ejs',{imgname:imgpath});
 });
 
 //any format -> pdf -> png
@@ -237,18 +242,19 @@ console.log('approot'+appRoot);
 
 	upload(req, res,(error) => {
 		if(error){
-		  console.log('ERROR '+error);
+		//  console.log('ERROR '+error);
 		 // res.redirect('/profile');
 		//  res.render('sign_document.ejs');
 		}else{
 		  if(req.file == undefined){
-			  console.log(here);
+		//	  console.log(here);
 			//res.redirect('/profile');
 				//res.render('sign_document.ejs');
   
 		  }else{
 			var filename = path.basename(path.join(appRoot,'public','files',req.file.originalname), path.extname(req.file.originalname));
-		//	console.log(filename);
+		     global.imgname = filename;
+			//	console.log(filename);
 		//	   console.log(req.file.originalname);
 			   const pdf2pic = new PDF2Pic({
 				density: 100,           // output pixels per inch
@@ -261,7 +267,7 @@ console.log('approot'+appRoot);
 			
 			
 			pdf2pic.convertBulk(path.join(appRoot,'public','files',req.file.originalname),-1).then((resolve) => {
-				console.log("image converter successfully!");
+		//		console.log("image converter successfully!");
 			   
 				return resolve;
 			  });
@@ -289,8 +295,9 @@ console.log('approot'+appRoot);
 			//   } 
 			// 	res.render('sign_document.ejs');
 		  //  });
-		}
-	  }
+			}
+		 
+			}
 	});    
   });
   

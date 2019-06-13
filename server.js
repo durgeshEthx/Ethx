@@ -6,7 +6,7 @@ var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
-var serveStatic = require('serve-static')
+
 global.appRoot = path.resolve(__dirname);
 
 mongoose.connect('mongodb://localhost/ManualAuth', { useNewUrlParser: true });
@@ -29,7 +29,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');	
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(express.static(__dirname + '/views'));
 
@@ -49,9 +49,10 @@ app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.send(err.message);
 });
-app.use(serveStatic(path.join(__dirname + "public" )));
- //app.use( express.static(path.join((__dirname + "public" ))));
+//app.use(serveStatic(path.join(__dirname + "public" )));
+//  app.use( express.static("/images",__dirname + "/images"));
 //app.use( express.static(__dirname));
+
 
 // listen on port 3000
 app.listen(3000, function () {
