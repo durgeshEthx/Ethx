@@ -12,6 +12,8 @@
 </head>
 
 <body>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.js"></script>
+	<script src="http://malsup.github.com/jquery.form.js"></script>
 	<div class="col-md-4 col-md-offset-4">
 		<div>
 			<p>Welcome </p>
@@ -34,14 +36,14 @@
 				<div class="col-xs-12 collapse " id="doc_signee_details">
 					<div class="col-md-12">
 						<h3>Signee Details</h3>
-						<form action="/upload" enctype="multipart/form-data" method="POST">
+						<form id="fileupload" action="/upload" enctype="multipart/form-data" method="POST">
 							<input type="file" name="photo" />
 							<input type="submit" value="Upload a file" />
 						</form>
 						<div id="field">
 							<div id="field0">
 								<!-- Text input-->
-								<form id="form1" method="post" action="/sign_document">
+								<form action="/signd" method="POST" id="form1"  >
 									<div class="form-group">
 										<label class="col-md-4 control-label" for="action_id">Name</label>
 										<div class="col-md-5">
@@ -61,16 +63,7 @@
 											</div>
 										</div>
 
-										<!-- File Button -->
-										<!-- <div class="form-group">
-	  <label class="col-md-4 control-label" for="action_json">Upload document</label>
-	  <div class="col-md-4" action="/upload" enctype="multipart/form-data" method="POST">
-		          <input type="submit" value="Upload a file"/>
-				  <input type="file" id="action_json" name="action_json" class="input-file" >
-		 <div id="action_jsondisplay"></div>
-	  </div>
-	</div> -->
-
+			
 									</div>
 							</div>
 
@@ -83,15 +76,26 @@
 							</div>
 						</div>
 						<!-- <button class="btn btn-primary" type="submit">submit</button> -->
+						<a  href="/signd" id="preaprebtn" class="btn btn-primary collapse">Prepare Documents to Sign</a>
 						</form>
 						<br><br>
 
 					</div>
 				</div>
 		</div>
+		<!-- <form action="/sign" method="POST">
+
+			<p>Park Name: <input type="text" name = "parkName" placeholder = "Park Name"></p>
+	
+			<p>Park Picture: <input type="text" name = "parkImage" placeholder="Image URL"></p>
+			<button type="submit">Add</button>
+	
+			<a href="/sign"><button>Add to My Memories</button></a>
+	
+		 </form> -->
 		<!--  -->
-		<a id="preaprebtn" href="/sign_document" type="button" class="btn btn-primary collapse">Prepare Documents to
-		Sign</a>
+		<!-- <a id="preaprebtn" href="/sign_document" type="button" class="btn btn-primary collapse">Prepare Documents to
+			Sign</a> -->
 		<!-- <button class="btn btn-primary collapse" id="preaprebtn">Prepare Documents to Sign</button> -->
 		<!-- <a data-fancybox="gallery" href="big_1.jpg">
 			<img src="small_1.jpg">
@@ -104,7 +108,14 @@
 		</center>
 
 		<script>
-
+			// wait for the DOM to be loaded 
+			$(document).ready(function () {
+				// bind 'myForm' and provide a simple callback function 
+				$('#fileupload').ajaxForm(function () {
+					console.log('logged');
+					alert("Thank you for your comment!");
+				});
+			});
 			function test() {
 				var x = document.getElementById("doc_signee_details1");
 				if (x.style.display === "none") {

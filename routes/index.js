@@ -14,50 +14,60 @@ const fs = require('fs');
 
 
 router.get('/', function (req, res, next) {
-	return res.render('index.ejs');
+	return res.render('index0.ejs');
 });
 
 
-router.post('/', function(req, res, next) {
-	console.log(req.body);
+router.post('/', function(req, res) {
+	
 	var personInfo = req.body;
-
+	console.log('req.body '+ personInfo.passwordConf);
+	//res.send({"Success":"password is not matched"});
 //!personInfo.username ||
 	if(!personInfo.email ||  !personInfo.password || !personInfo.passwordConf){
+		
 		res.send();
 	} else {
+		
 		if (personInfo.password == personInfo.passwordConf) {
-
+			
 			User.findOne({email:personInfo.email},function(err,data){
 				if(!data){
+					
 					var c;
 					User.findOne({},function(err,data){
-
+					console.log('err '+err);
 						if (data) {
 							console.log("if");
 							c = data.unique_id + 1;
 						}else{
+							console.log('test2');
 							c=1;
 						}
 
 						var newPerson = new User({
 							unique_id:c,
 							email:personInfo.email,
-							// username: personInfo.username,
+							//fullname: personInfo.username,
 							password: personInfo.password,
 							passwordConf: personInfo.passwordConf
 						});
 
 						newPerson.save(function(err, Person){
-							if(err)
+							if(err){
+
+								console.log('test0');
 								console.log(err);
+						}
 							else
 								console.log('Success');
 						});
 
 					}).sort({_id: -1}).limit(1);
-					res.send({"Success":"You are regestered,You can login now."});
+					//res.send({"Success":"You are regestered,You can login now."});
+					res.redirect('/login');
 				}else{
+                    console.log('test1');
 					res.send({"Success":"Email is already used."});
 				}
 
@@ -69,11 +79,11 @@ router.post('/', function(req, res, next) {
 });
 
 router.get('/login', function (req, res, next) {
-	return res.render('login.ejs');
+	return res.render('login0.ejs');
 });
 
 router.post('/login', function (req, res, next) {
-	//console.log(req.body);
+	console.log(req.body);
 
 	User.findOne({email:req.body.email},function(err,data){
 		if(data){
@@ -96,8 +106,8 @@ router.post('/login', function (req, res, next) {
 router.get('/profile', function (req, res, next) {
 	//console.log("profile");
 	User.findOne({unique_id:req.session.userId},function(err,data){
-		console.log("data");
-		console.log(data);
+	//	console.log("data");
+	//	console.log(data);
 		if(!data){
 			res.redirect('/');
 		}else{
@@ -152,10 +162,15 @@ router.post('/forgetpass', function (req, res, next) {
 	});
 	
 });
+router.post('/sign',function(req,res){
+	// res.send('clicked');
+//	 res.send(req.body.parkName);
+	res.render('sign_document.ejs');
+});
 
-router.get('/sign_document',function(req,res){
-	 
-	console.log('url : '+req.body.name);
+router.post('/sign',function(req,res){
+	 var name = req.body.name;
+	console.log("MYname : "+name);
 	//random strings
 	const crypto = require('crypto');
 
@@ -228,12 +243,12 @@ watermark.embed(optionsTextWatermark, function(status) {
 //             console.log(error); //Exepection error....
 //         }
 //     )
-vccxcz
+
 
 	var imgpath = path.join('images',imgname);
 	imgpath = imgpath +'.png';
 	//console.log('imgpath '+imgpath);
-     res.render('sign_document.ejs',{imgname:imgpath});
+     res.render('signd.ejs',{imgpath:imgpath});
 });
 
 //any format -> pdf -> png
@@ -256,7 +271,7 @@ console.log('approot'+appRoot);
 		     global.imgname = filename;
 			//	console.log(filename);
 		//	   console.log(req.file.originalname);
-			   const pdf2pic = new PDF2Pic({
+			    const pdf2pic = new PDF2Pic({
 				density: 100,           // output pixels per inch
 				savename:filename,   // output file name
 				savedir: "./images",    // output file location
@@ -299,6 +314,7 @@ console.log('approot'+appRoot);
 		 
 			}
 	});    
+	//res.redirect('back');
   });
   
   
