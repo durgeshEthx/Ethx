@@ -5217,12 +5217,16 @@ button.close {
   overflow-x: hidden;
   overflow-y: auto;
 }
-
+.modal {
+  background: #00000085;
+}
 .modal-dialog {
   position: relative;
   width: auto;
   margin: 0.5rem;
   pointer-events: none;
+  left:50%;
+  top:50%
 }
 
 .modal.fade .modal-dialog {
@@ -5230,8 +5234,8 @@ button.close {
   transition: -webkit-transform 0.3s ease-out;
   transition: transform 0.3s ease-out;
   transition: transform 0.3s ease-out, -webkit-transform 0.3s ease-out;
-  -webkit-transform: translate(0, -25%);
-          transform: translate(0, -25%);
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
 }
 
 .modal.show .modal-dialog {
@@ -5302,8 +5306,11 @@ button.close {
 }
 
 .modal-header .close {
-  padding: 1rem;
-  margin: -1rem -1rem -1rem auto;
+  padding: .5rem;
+  /* margin: -1rem -1rem -1rem auto; */
+  position: absolute;
+  top:0;
+  right:0;  
 }
 
 .modal-title {
@@ -5316,7 +5323,7 @@ button.close {
   -webkit-box-flex: 1;
       -ms-flex: 1 1 auto;
           flex: 1 1 auto;
-  padding: 1rem;
+  padding: 1rem 2rem;
 }
 
 .modal-footer {
@@ -5351,8 +5358,7 @@ button.close {
 
 @media (min-width: 576px) {
   .modal-dialog {
-    max-width: 550px;
-    margin: 1.75rem auto;
+    max-width: 450px!important;
   }
   .modal-dialog-centered {
     min-height: calc(100% - (1.75rem * 2));

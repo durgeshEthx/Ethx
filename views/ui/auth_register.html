@@ -2,6 +2,8 @@
 <html>
 <head>
 	<title>trsts.co- Digitally sign documents on blockchain</title>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+	<!-- <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script> -->
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">
 	</script>
 	<meta charset="utf-8">
@@ -74,11 +76,11 @@
 			</h4>
 			<form id="formreg" action="/" method="POST">
 				<div class="form-group">
-					<label for=""> Full Name</label><input class="form-control" type="text" name="username">
+					<label for=""> Full Name</label><input class="form-control" type="text" name="username" id="name">
 					<div class="pre-icon os-icon os-icon-user-male-circle2"></div>
 				</div>
 				<div class="form-group">
-					<label for=""> Email address</label><input class="form-control" type="email" name="email">
+					<label for=""> Email address</label><input class="form-control" type="email" name="email" id="email">
 					<div class="pre-icon os-icon os-icon-email-2-at2"></div>
 				</div>
 				<div class="row">
@@ -100,7 +102,7 @@
 				<div class="form-group">
 					<label for="">Country</label>
 					<div class="pre-icon os-icon os-icon-arrow-right4"></div>
-					<select class="form-control">
+					<select class="form-control" id="Country" name="country">
 						<option></option>
 						<option value="AF">Afghanistan</option>
 						<option value="AX">Åland Islands</option>
@@ -392,17 +394,59 @@
 
 <script>
 
+$(document).ready(function() {
+
+	// $('#Country').on('change',function(){
+    //     //var optionValue = $(this).val();
+    //     //var optionText = $('#dropdownList option[value="'+optionValue+'"]').text();
+    //     var optionText = $("#Country option:selected").text();
+	// 	//alert("Selected Option Text: "+optionText);
+	// 	console.log(optionText);
+    // });
+
+$('#formreg').submit(function(e) {first_form
+  e.preventDefault();
+  var name = $('#name').val();
+ // var last_name = $('#email').val();
+ // var email = $('#email').val();
+  //var password = $('#password').val();
+
+// $(".error").remove();
+
+  if (name.length < 1) {
+	$('#name').after('<span class="error">This field is required</span>');
+  }
+//   if (last_name.length < 1) {
+// 	$('#email').after('<span class="error">This field is required</span>');
+//   }
+//   if (email.length < 1) {
+// 	$('#email').after('<span class="error">This field is required</span>');
+//   } else {
+// 	var regEx = /^[A-Z0-9][A-Z0-9._%+-]{0,63}@(?:[A-Z0-9-]{1,63}\.){1,125}[A-Z]{2,63}$/;
+// 	var validEmail = regEx.test(email);
+// 	if (!validEmail) {
+// 	  $('#email').after('<span class="error">Enter a valid email</span>');
+// 	}
+//   }	
+//   if (password.length < 8) {
+// 	$('#password').after('<span class="error">Password must be at least 8 characters long</span>');
+//   }
+});
+
+});
+
 	grecaptcha.ready(function () {
 		console.log('inside ready');
 		grecaptcha.execute('6LegEqkUAAAAAM26uqgIyMEXH5ujQDY53okuRKgB', { action: 'login' }).then(function (token) {
 			console.log(token);
 			$('#formreg').prepend('<input type="hidden" name="g-recaptcha-response-v3" value="' + token + '">');
 		});
+	});
 
 
-// </script>
-// <script>
+
 		$(document).ready(function () {
+			// swal.fire("Hello world!");
 			var from, to, subject, text;
 			$("#send_email").click(function () {
 				to = $("#to").val();
@@ -423,7 +467,7 @@
 			var goodColor = "#66cc66";
 			var badColor = "#ff6666";
 
-			if (pass1.value.length > 5) {
+			if (pass1.value.length > 1) {
 				pass1.style.backgroundColor = goodColor;
 				message.style.color = goodColor;
 				message.innerHTML = "character number ok!"

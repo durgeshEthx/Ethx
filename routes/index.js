@@ -14,6 +14,11 @@ const fs = require('fs');
 var request = require('request');
 var nodemailer = require("nodemailer");
 var Recaptcha = require('express-recaptcha').RecaptchaV3;
+const userdetail = require('../models/userdetails');
+const TokenVerification = require('../models/tokenverification');
+
+// import swal from 'sweetalert';
+//const swal = require('sweetalert');
 
 var recaptcha = new Recaptcha('6LegEqkUAAAAAM26uqgIyMEXH5ujQDY53okuRKgB', '6LegEqkUAAAAAC3G_m7NXeWTCIOPH0Gfk2CmVUbo', { callback: 'cb' });
 
@@ -21,27 +26,70 @@ var recaptcha = new Recaptcha('6LegEqkUAAAAAM26uqgIyMEXH5ujQDY53okuRKgB', '6LegE
 	Here we are configuring our SMTP Server details.
 	STMP is mail server which is responsible for sending and recieving email.
 */
-var smtpTransport = nodemailer.createTransport({
-	service: "Gmail",
+// var smtpTransport = nodemailer.createTransport({
+// 	service: "Gmail",
+// 	auth: {
+// 		user: "durgeshkmr4u@gmail.com",
+// 		pass: "rnsqimcuthkawmnx"
+// 	}
+// });
+
+function smtpconfig(){
+    var smtpTransport = nodemailer.createTransport({
+	pool: true,
+	host: "smtp.sparkpostmail.com",
+	port: 587,
+	secure: false,
+	
 	auth: {
-		user: "durgeshkmr4u@gmail.com",
-		pass: "rnsqimcuthkawmnx"
+	  user: "SMTP_Injection",
+	  pass: "fc885621d357d99f241c14c1bd89b0b930046fd2"
 	}
-});
+  });
+
+  return smtpTransport;
+}
+// var smtpTransport = nodemailer.createTransport({
+// 	pool: true,
+// 	host: "email-smtp.us-west-2.amazonaws.com",
+// 	port: 465,
+// 	secure: true, // use TLS
+// 	auth: {
+// 	  user: "AKIA4ZPU2O6CY3GZUWS3",
+// 	  pass: "BCaWdRvL+gZjvYhATQM3wwbOVJ/ZZdRDDDml8+KABKCw"
+// 	}
+//   });
 var rand, mailOptions, host, link;
+var emailcode;
 /*------------------SMTP Over-----------------------------*/
 
 router.get('/', function (req, res, next) {
 	return res.render('index0.ejs', { captcha: recaptcha.render() });
+	//Swal.fire('Oops...', 'Something went wrong!', 'error')
 });
 
-
+function getClientIp(req) {
+	var ipAddress;
+	// The request may be forwarded from local web server.
+	var forwardedIpsStr = req.header('x-forwarded-for'); 
+	if (forwardedIpsStr) {
+	  // 'x-forwarded-for' header may return multiple IP addresses in
+	  // the format: "client IP, proxy 1 IP, proxy 2 IP" so take the
+	  // the first one
+	  var forwardedIps = forwardedIpsStr.split(',');
+	  ipAddress = forwardedIps[0];
+	}
+	if (!ipAddress) {
+	  // If request was not forwarded
+	  ipAddress = req.connection.remoteAddress;
+	}
+	return ipAddress;
+  };
 router.post('/', function (req, res) {
 
 
-
 	var personInfo = req.body;
-
+console.log('options'+personInfo.country);
 	//res.send({"Success":"password is not matched"});
 	//!personInfo.username ||
 	if (!personInfo.email || !personInfo.password || !personInfo.passwordConf) {
@@ -56,35 +104,84 @@ router.post('/', function (req, res) {
 
 					var c;
 					User.findOne({}, function (err, data) {
-						console.log('err ' + err);
+						
 						if (data) {
-							console.log("if");
+						
 							c = data.unique_id + 1;
 						} else {
-							console.log('test2');
+							
 							c = 1;
 						}
-
+						rand = genToken();// gen code for email code url.
+						emailcode = md5('ethx'+ rand +'smlabs');
+						global.ec = emailcode;
+					
 						var newPerson = new User({
 							unique_id: c,
 							email: personInfo.email,
-							//fullname: personInfo.username,
+							fullname: personInfo.username,
 							password: personInfo.password,
-							passwordConf: personInfo.passwordConf
+							passwordConf: personInfo.passwordConf,
+							email_code:emailcode,
+							email_verified: 0,
+							Date:Date.now(),
+							ip:getClientIp(req),
+							status:1
+                            
 						});
 
 						newPerson.save(function (err, Person) {
 							if (err) {
 
-								console.log('test0');
-								console.log(err);
+								
+								console.log('newperson'+err);
+							}
+							else
+								console.log('Success');
+						});
+						// logic for curr
+						const country = personInfo.country;
+						var curr;
+						if(country === 'IN'){
+							curr = 'INR';
+						}
+						else{
+							curr = 'USD';
+						}
+						var userdetails = new userdetail({
+							unique_id:c,
+							uid : c,
+							country:personInfo.country,
+							currency:curr,
+							mobile:"",
+							company:"",
+							position:"",
+							status:""
+						});
+						userdetails.save(function (err, details) {
+							if (err) {
+
+								
+								console.log('details'+err);
 							}
 							else
 								console.log('Success');
 						});
 
-					}).sort({ _id: -1 }).limit(1);
+						var verifyToken = new TokenVerification({
+							_userId: c,
+							token:genToken()
+							
+						});
+						verifyToken.save(function(err,token){
+							if (err) 
+						 console.log('details'+err);
+						 else
+								console.log('Success');
+						});
 
+					}).sort({ _id: -1 }).limit(1);
+					
 					//var request = require('request');
 
 					// request.post(
@@ -101,18 +198,45 @@ router.post('/', function (req, res) {
 					// g-recaptcha-response is the key that browser will generate upon form submit.
 					//	if its blank or null means user has not selected the captcha, so return the error.
 					// console.log('req.body ' + personInfo.passwordConf);
-					// console.log(req.body['g-recaptcha-response-v3']);
-					//       if(req.body['g-recaptcha-response-v3'] === undefined || req.body['g-recaptcha-response-v3'] === '' || req.body['g-recaptcha-response-v3'] === null) {
-					//         return res.json({"responseCode" : 1,"responseDesc" : "Please select captcha"});
-					//       }
-					//       // Put your secret key here.	
-					//       var secretKey = "6LegEqkUAAAAAC3G_m7NXeWTCIOPH0Gfk2CmVUbo​";
+					 console.log(req.body['g-recaptcha-response-v3']);
+					      if(req.body['g-recaptcha-response-v3'] === undefined || req.body['g-recaptcha-response-v3'] === '' || req.body['g-recaptcha-response-v3'] === null) {
+					        return res.json({"responseCode" : 1,"responseDesc" : "Please select captcha"});
+					      }
+					      // Put your secret key here.	
+					      var secretKey = "6LegEqkUAAAAAC3G_m7NXeWTCIOPH0Gfk2CmVUbo​";
 					//       // req.connection.remoteAddress will provide IP address of connected user.
-					//       var verificationUrl = "https://www.google.com/recaptcha/api/siteverify?secret=" + secretKey + "&response=" + req.body['g-recaptcha-response-v3'] + "&remoteip=" + req.connection.remoteAddress;
-					//       // Hitting GET request to the URL, Google will respond with success or error scenario.
+					      var verificationUrl = "https://www.google.com/recaptcha/api/siteverify?secret=" + secretKey + "&response=" + req.body['g-recaptcha-response-v3'] + "&remoteip=" + req.connection.remoteAddress;
+				
+						  var clientServerOptions = {
+							uri: verificationUrl,
+							body: JSON.stringify(''),
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json'
+							}
+						}
+
+						request(clientServerOptions, function (error, response) {
+							console.log(error,response.body);
+							return;
+						});
+				// request.post( { headers: {'content-type' : 'application/json'} ,
+				// 		verificationUrl,
+				// 		function (error, response, body) {
+				// 			if (!error && response.statusCode == 200) {
+				// 				console.log("score"+body.score);
+				// 			}
+				// 			else{
+				// 				console.log('reqerrir '+response.statusCode);
+				// 			}
+				// 		}
+				// });
+
+		
+						  //       // Hitting GET request to the URL, Google will respond with success or error scenario.
 					//       request(verificationUrl,function(error,response,body) {
 					//         body = JSON.parse(body);
-					//         console.log(body);
+					//         console.log('inside req'+body);
 					//         // Success will be true or false depending upon captcha validation.
 					//         if(body.success !== undefined && !body.success) {
 					//           return res.json({"responseCode" : 1,"responseDesc" : "Failed captcha verification"});
@@ -138,26 +262,26 @@ router.post('/', function (req, res) {
 					// 	if (err) {
 					// 		throw err;
 					// 	}
-
+                    console.log('code '+global.ec);
 					const fp = appRoot + '/views/ui/email_activate.html';
 					var data = fs.readFileSync(fp, 'utf8');
-					var rand;
+				//	var rand;
 
 					// Invoke the next step here however you like
 					//console.log('text' + text);   // Put all of the code here (not the best solution)
+				
+				function genToken(){
 					const crypto = require('crypto');
+				   return crypto.randomBytes(32).toString('hex');
+				}
+					
 
-					// crypto.randomBytes(64, (err, buf) => {
-					// 	if (err) throw err;
-					// 	console.log(`${buf.length} bytes of random data: ${buf.toString('hex')}`);
-					// 	random = buf.toString('hex');
-						
-					// });
-                   
-					rand = crypto.randomBytes(64).toString('hex');;//Math.floor((Math.random() * 100) + 54);
+					
+					
 					host = req.get('host');
-					link = "http://" + req.get('host') + "/verify?id=" + rand;
-					console.log('rand'+rand);
+					link = "http://" + req.get('host') + "/verify?id=" + global.ec  + "&email="+ personInfo.email;
+					console.log('link '+link);
+					
 					var result = data.replace(/replacemee/g, link);
                     result = result.replace(/replacename/g, personInfo.username);
 					// fs.writeFile(fp, result, 'utf8', function (err) {
@@ -173,19 +297,25 @@ router.post('/', function (req, res) {
 					// });
 					//var text = fs.readFileSync(appRoot+'/views/ui/email_activate.html','utf8')
 					mailOptions = {
+						 from:'no-reply@trsts.co',
 						to: personInfo.email,
 						subject: "Please confirm your Email account",
 						html: "" + result + "<br>or<a href=" + link + ">Click here to verify</a>"
+						
 					}
-					console.log(mailOptions);
-					smtpTransport.sendMail(mailOptions, function (error, response) {
+				//	console.log(mailOptions);
+				var smtp = smtpconfig();
+					smtp.sendMail(mailOptions, function (error, response) {	
 						if (error) {
-							console.log(error);
+						//	console.log(error);
 							res.end("error");
 						} else {
-							console.log("Message sent: " + response.message);
+							console.log("Message sent: " + response.message); 
 							//res.end("sent");
-							res.redirect('/login');
+							//console.log('swal');
+							
+							// res.redirect('/login');
+							res.redirect('/plans');
 						}
 					});
                     
@@ -193,7 +323,7 @@ router.post('/', function (req, res) {
 					//res.redirect('/');
 					//res.render(('emailver.ejs'))
 				} else {
-					console.log('test1');
+					console.log('test1'+data);
 					res.send({ "Success": "Email is already used." });
 				}
 
@@ -203,22 +333,53 @@ router.post('/', function (req, res) {
 		}
 	}
 });
+router.get('/dashboard',function(req,res){
+	res.render('dashboard.ejs');
+});
+router.get('/plans',function(req,res){
+     res.render('plans.ejs');
+});
 router.get('/verify', function (req, res) {
-	console.log(req.protocol + ":/" + req.get('host'));
-	if ((req.protocol + "://" + req.get('host')) == ("http://" + host)) {
-		console.log("Domain is matched. Information is from Authentic email");
-		if (req.query.id == rand) {
-			console.log("email is verified");
-			res.end("<h1>Email " + mailOptions.to + " is been Successfully verified");
+	console.log(req.query.id+"&"+emailcode);
+	console.log(req.protocol + "://" + req.get('host'));
+
+	User.findOne({ email: req.query.email }, function (err, data) {
+		if (data) {
+
+			if(data.email_verified === 0){
+				console.log('email verified');
+				if(req.query.id === emailcode){
+				 data.email_verified = 1;
+				 data.save(function(err, result){
+					 console.log('saved');
+				 });
+        
+				}
+			}else{
+
+				res.send('Email already verified');
+			}
+        
 		}
-		else {
-			console.log("email is not verified");
-			res.end("<h1>Bad Request</h1>");
-		}
-	}
-	else {
-		res.end("<h1>Request is from unknown source");
-	}
+	});
+
+
+
+
+	// if ((req.protocol + "://" + req.get('host')) == ("http://" + host)) {
+	// 	console.log("Domain is matched. Information is from Authentic email");
+	// 	if (req.query.id == rand) {
+	// 		console.log("email is verified"+req.query.id);
+	// 		res.end("<h1>Email " + mailOptions.to + " is been Successfully verified");
+	// 	}
+	// 	else {
+	// 		console.log("email is not verified");
+	// 		res.end("<h1>Bad Request</h1>");
+	// 	}
+	// }
+	// else {
+	// 	res.end("<h1>Request is from unknown source");
+	// }
 });
 router.get('/login', function (req, res, next) {
 	return res.render('login0.ejs');
@@ -461,5 +622,54 @@ router.post('/upload', function (req, res) {
 	//res.redirect('back');
 });
 
+router.post('/resetpwd',function(req,res){
+    
+	const fp = appRoot + '/views/ui/email_recovery.html';
+	var data = fs.readFileSync(fp, 'utf8');
+	var rand;
+
+	// Invoke the next step here however you like
+	//console.log('text' + text);   // Put all of the code here (not the best solution)
+	const crypto = require('crypto');
+
+	// crypto.randomBytes(64, (err, buf) => {
+	// 	if (err) throw err;
+	// 	console.log(`${buf.length} bytes of random data: ${buf.toString('hex')}`);
+	// 	random = buf.toString('hex');
+		
+	// });
+   
+	rand = crypto.randomBytes(32).toString('hex');;//Math.floor((Math.random() * 100) + 54);
+	host = req.get('host');
+	link = "http://" + req.get('host') + "/verify?id=" + rand;
+	console.log('rand'+rand);
+	global.rand = rand;
+	var result = data.replace(/replaceurl/g, link);
+	result = result.replace(/replacename/g, );
+
+	mailOptions = {
+		 from:'no-reply@trsts.co',
+		to: req.body.email,
+		subject: "Reset Password",
+		html:  result + "<br>or<a href=" + link + ">Click here to verify</a>"
+	}
+	console.log(mailOptions);
+	smtpTransport.sendMail(mailOptions, function (error, response) {
+		if (error) {
+			console.log(error);
+			res.end("error");
+		} else {
+			console.log("Message sent: " + response.message);
+			//res.end("sent");
+			//console.log('swal');
+			
+			res.redirect('/login');
+		}
+	});
+});
+router.post('/contactus',function(req,res){
+  console.log(req.body.companyName);
+  res.render('plans.ejs');
+});
 
 module.exports = router;
